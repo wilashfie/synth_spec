@@ -159,6 +159,13 @@ def create_spec(tube,frac,log10T,log10G,time=55,verbose=False):
     np.nan_to_num(error, copy=False, nan=0)
     tot_emissNEI += error
 
+    meas_error = np.sqrt(tot_emissNEI) # error measured
+    np.nan_to_num(meas_error, copy=False, nan=0)
+
+    rando = np.random.randn(2000)*0.001*np.max(meas_error) # add small amount of noize to zero-ish values
+    too_small = np.where(meas_error < 0.01*np.max(meas_error))
+    meas_error[too_small] += rando[too_small]
+
     if verbose == True:
         print('A = ', A)
         print('A_pixel = ', A_pixel)
@@ -169,7 +176,7 @@ def create_spec(tube,frac,log10T,log10G,time=55,verbose=False):
         print('photo erg = ', photo_erg)
 
 
-    return ll,tot_emissNEI,error
+    return ll,tot_emissNEI,meas_error
 
 
 # plot
