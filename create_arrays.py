@@ -46,9 +46,9 @@ def create_arr(tube,frac,log10T,log10G,time=55,verbose=False):
     G[temp<22000] = -10000 # set all log10G with low temp to large, small number (st 10^G~0)
 
     # nei/eqi arrays at time =time
-    f_nei=frac.fraq.f_nei[0]
+    f_nei=frac.arrs.f_nei[0]
     f_nei = f_nei[:,time]
-    f_eqi=frac.fraq.f_eqi[0]
+    f_eqi=frac.arrs.f_eqi[0]
     f_eqi = f_eqi[:,time]
 
     # interpolation arrays
