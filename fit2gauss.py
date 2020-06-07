@@ -88,16 +88,16 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
 
     #calculate chi_square
     #jj = np.where((lam > 1402) & (lam < 1405)) # trim excess zeros in data first
-    jj = np.where(y > 0.001)
-    lam_s = lam[jj]
-    y_s = y[jj]
-    #y_modelone = single_gauss_func_noder(lam_s, *a1g)
-    y_modelone = y1g[jj]
-    yerr_s = yerr[jj]
-    X2one = np.sum(((y_modelone - y_s) / yerr_s)**2)
+    #jj = np.where(y > 0.001)
+    #lam_s = lam[jj]
+    #y_s = y[jj]
+    y_modelone = single_gauss_func_noder(lam, *a1g)
+    #y_modelone = y1g[jj]
+    #yerr_s = yerr[jj]
+    X2one = np.sum(((y_modelone - y) / yerr)**2)
 
     #X2_1 = np.sum(((y1g-y)/yerr)**2)
-    chi1g = X2one/(len(y_s)-3) # reduced chi^2
+    chi1g = X2one/(len(y)-3) # reduced chi^2
 
 
 
@@ -106,7 +106,9 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
     a0_2 = est_params([ m0, m1, m2, m3 ], dx=dx)
     upper_bound = [np.inf,1404,np.inf,np.inf,1404,np.inf]
     lower_bound = [0,1403,0,0,0,0]
-    a2g, a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2, sigma = yerr, absolute_sigma = True, maxfev = 110000)#, bounds=(lower_bound, upper_bound)) #,
+    #a2g, a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2, sigma = yerr, absolute_sigma = True, maxfev = 110000)#, bounds=(lower_bound, upper_bound)) #,
+    #a2g,a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2, maxfev = 2000, bounds = (0, np.inf))
+    a2g,a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2, bounds = (0, np.inf))
 
     # individual gaussians of double fit
     pars_1 = a2g[0:3]
@@ -118,8 +120,8 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
     # calculate chi^2
     #y_modeltwo = double_gauss_func_noder(lam_s, *a2g)
     y2g = y2a+y2b
-    y_modeltwo = y2g[jj]
-    X2two = np.sum(((y_modeltwo - y_s) / yerr_s)**2)
+    y_modeltwo = y2g
+    X2two = np.sum(((y_modeltwo - y) / yerr)**2)
     chi2g = X2two/(len(y_modeltwo)-6) # reduced chi^2
 
     if verbose==True:
