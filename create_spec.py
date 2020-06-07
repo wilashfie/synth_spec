@@ -32,7 +32,7 @@ def create_spec(tube,frac,log10T,log10G,time=55,verbose=False):
     t = tube.tarr.t[time]
     n = tube.tarr.n[time]
     los_v = tube.tarr.v[time].T[0]
-    sm_v = -savgol_filter(los_v,3,1)
+    sm_v = -los_v
     los_x = tube.tarr.x[time].T[0]
     n_e = tube.tarr.epamu[time]*tube.tarr.rho[time]/1.67e-8 # number density
     b = tube.tarr.b[time]

@@ -17,7 +17,7 @@ from matplotlib import gridspec
 # log10T/log10G, log of contribution function G and corresponding log of temperature T, imported from dana's email
 
 # set inital values
-line = 1402.77
+line = 1403.
 mass = 28.0*1.66054e-27
 kb = 1.3807e-23
 c = 300
@@ -32,7 +32,7 @@ def create_arr(tube,frac,log10T,log10G,time=55,verbose=False):
     t = tube.tarr.t[time]
     n = tube.tarr.n[time]
     los_v = tube.tarr.v[time].T[0]
-    sm_v = -savgol_filter(los_v,3,1)
+    sm_v = -los_v
     los_x = tube.tarr.x[time].T[0]
     n_e = tube.tarr.epamu[time]*tube.tarr.rho[time]/1.67e-8 # number density
     b = tube.tarr.b[time]
@@ -168,7 +168,7 @@ def create_arr(tube,frac,log10T,log10G,time=55,verbose=False):
         print('atn = ', atn)
         print('photo erg = ', photo_erg)
 
-    d = {'wav':ll,'spec':tot_emissNEI,'EM':EM,'x':x,'v':v,'T':T,'ne':ne}
+    d = {'wav':ll,'spec':tot_emissNEI,'EM':EM,'g':g,'fac':photo_fac*factor,'x':x,'v':v,'T':T,'ne':ne}
 
 
     # d['wav'] = ll
