@@ -180,15 +180,3 @@ def create_arr(tube,frac,log10T,log10G,time=55,verbose=False):
     # d['ne'] = ne
 
     return d
-
-
-# plot
-#fig=plt.figure(figsize=[10,10])
-#fig, ax = plt.subplots(figsize=[10,10])
-#plt.plot(ll,tot_emissNEI)
-#plt.plot(ll,tot_emiss)
-#plt.xlim(1403,1404)
-#plt.ylabel('normalized intensity')
-#ax.set_xlabel('wavelength [$\AA$]')
-
-#fig.savefig('specI.png',bbox_inches='tight', dpi=600)

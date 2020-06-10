@@ -158,7 +158,6 @@ def create_spec(tube,frac,log10T,log10G,time=55,verbose=False):
     error = yerr*noise
     np.nan_to_num(error, copy=False, nan=0)
     tot_emissNEI += error
-
     meas_error = np.sqrt(tot_emissNEI) # error measured
     np.nan_to_num(meas_error, copy=False, nan=0)
 
@@ -177,15 +176,3 @@ def create_spec(tube,frac,log10T,log10G,time=55,verbose=False):
 
 
     return ll,tot_emissNEI,meas_error
-
-
-# plot
-#fig=plt.figure(figsize=[10,10])
-#fig, ax = plt.subplots(figsize=[10,10])
-#plt.plot(ll,tot_emissNEI)
-#plt.plot(ll,tot_emiss)
-#plt.xlim(1403,1404)
-#plt.ylabel('normalized intensity')
-#ax.set_xlabel('wavelength [$\AA$]')
-
-#fig.savefig('specI.png',bbox_inches='tight', dpi=600)
