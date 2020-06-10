@@ -107,21 +107,29 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
     a0_2 = est_params([ m0, m1, m2, m3 ], dx=dx)
     if verbose==True: print('est params = ', a0_2)
 
-    spec_sm = savgol_filter(y, 21, 1)
+    spec_sm = savgol_filter(y, 23, 1) #smooth to make local peak finding more accurate
     peaks, _ = find_peaks(spec_sm)
 
     pos_peaks = lam[peaks]
     spec_peaks = spec_sm[peaks]
     iis = np.where(spec_peaks>1)
     iis = iis[0]
-    if len(iis)>2: print('!!!! - more than two peaks found')
-    if len(iis)<2:
+
+    if len(iis)>2: print('!!!! - more than two peaks found') # as a precaution
+
+    if len(iis)<2:     # redo fitering to see if we can't get two peaks. if not, we'll call it a single gaussian.
         print('single peak found')
-        iis = np.append(iis,iis[0]+15) # add one more index for fitting purposes.
+        spec_sm = savgol_filter(y, 15, 1)
+        peaks, _ = find_peaks(spec_sm)
+        pos_peaks = lam[peaks]
+        spec_peaks = spec_sm[peaks]
+        iis = np.where(spec_peaks>1)
+        iis = iis[0]
+        iis = np.append(iis,iis[0]+25) # add one more index for fitting purposes.
 
     amp_peaks = spec_peaks[iis] # amplitude and position of peaks
     pos_peaks = pos_peaks[iis]
-    a0_2[0],a0_2[1],a0_2[4],a0_2[5] = amp_peaks[0],pos_peaks[0],amp_peaks[1],pos_peaks[1]
+    a0_2[0],a0_2[1],a0_2[3],a0_2[4] = amp_peaks[0],pos_peaks[0],amp_peaks[1],pos_peaks[1]
 
     if verbose==True: print('new init params = ', a0_2)
     upper_bound = [np.inf,1404,np.inf,np.inf,1404,np.inf]
@@ -142,17 +150,18 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
     y2g = y2a+y2b
     y_modeltwo = y2g
     X2two = np.sum(((y_modeltwo - y) / yerr)**2)
-    chi2g = X2two/(len(y_modeltwo)-6) # reduced chi^2
+    chi2g = X2two/(len(y)-6) # reduced chi^2
 
     if verbose==True:
-        print('a2g[0] =', a2g[0])
+        print('a2g =', a2g)
         print('a1g[0] =', a1g[0])
+        print('chi2g = ', chi2g)
 
 
 
     # if double fitting WORSE than single gaussian fit, OR OR OR if the amplitude of the second Gaussian is neglible
-    if( chi2g > chi1g ) or (a2g[0] < a1g[0]*0.01):
-    #if(a2g[0] < a1g[0]*0.01):
+    #if( chi2g > chi1g ) or (a2g[0] < a1g[0]*0.01):
+    if(a2g[0] < a1g[0]*0.01):
         a2g = np.concatenate((a1g, a1g)) #  return copies of single fit params
         a2g[3] = 0.0 #  but zero amplitude
         y2a = y1g
