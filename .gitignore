@@ -1,8 +1,0 @@
-.ipynb_checkpoints
-
-*.pyc
-*.mp4
-
-.DS_Store
-
-__pycache__
