@@ -115,10 +115,10 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
     iis = np.where(spec_peaks>1)
     iis = iis[0]
 
-    if len(iis)>2: print('!!!! - more than two peaks found') # as a precaution
+    if (len(iis)>2) and (verbose == True): print('!!!! - more than two peaks found') # as a precaution
 
     if len(iis)<2:     # redo fitering to see if we can't get two peaks. if not, we'll call it a single gaussian.
-        print('single peak found')
+        if verbose == True: print('single peak found')
         spec_sm = savgol_filter(y, 3, 1) #15->3?
         peaks, _ = find_peaks(spec_sm)
         pos_peaks = lam[peaks]
@@ -136,7 +136,8 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
     lower_bound = [0,1403,0,0,0,0]
     #a2g, a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2, sigma = yerr, absolute_sigma = True, maxfev = 110000)#, bounds=(lower_bound, upper_bound)) #,
     #a2g,a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2, maxfev = 2000, bounds = (0, np.inf)) # no sig
-    a2g,a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2, bounds = (0, np.inf)) # no sig
+    #a2g,a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2, bounds = (0, np.inf)) # no sig
+    a2g,a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2)
 
     # individual gaussians of double fit
     pars_1 = a2g[0:3]
