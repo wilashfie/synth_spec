@@ -119,7 +119,7 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
 
     if len(iis)<2:     # redo fitering to see if we can't get two peaks. if not, we'll call it a single gaussian.
         print('single peak found')
-        spec_sm = savgol_filter(y, 15, 1)
+        spec_sm = savgol_filter(y, 3, 1) #15->3?
         peaks, _ = find_peaks(spec_sm)
         pos_peaks = lam[peaks]
         spec_peaks = spec_sm[peaks]
@@ -161,7 +161,8 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
 
     # if double fitting WORSE than single gaussian fit, OR OR OR if the amplitude of the second Gaussian is neglible
     #if( chi2g > chi1g ) or (a2g[0] < a1g[0]*0.01):
-    if(a2g[0] < a1g[0]*0.01):
+    small_amp = np.minimum(a2g[0],a2g[3])
+    if(small_amp < a1g[0]*0.01):
         a2g = np.concatenate((a1g, a1g)) #  return copies of single fit params
         a2g[3] = 0.0 #  but zero amplitude
         y2a = y1g
