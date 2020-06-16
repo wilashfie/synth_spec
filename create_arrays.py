@@ -26,7 +26,7 @@ flux=1.0e3 #? why this val?
 ll = np.arange(line-10,line+10,0.01)
 
 
-def create_arr(tube,frac,log10T,log10G,time=55,verbose=False):
+def create_arr(tube,frac,log10T,log10G,time=55,verbose=False, interp = 'linear'):
 
     # define arrays from tube.tarr
     t = tube.tarr.t[time]
@@ -51,10 +51,23 @@ def create_arr(tube,frac,log10T,log10G,time=55,verbose=False):
     f_eqi=frac.arrs.f_eqi[0]
     f_eqi = f_eqi[:,time]
 
+    temp_fac = f_nei/f_eqi
+    np.nan_to_num(temp_fac, copy=False, nan=1); # replace inf values with 1 (due to zeros in eqi)
+    i_half = int(n/2) #[0:i_half] = left half of tube
+    test = f_nei[0:i_half]
+    nei_jj = np.where(test > test[0])
+    nei_jj=nei_jj[0]
+
+    i_half = int(n/2) #[0:i_half] = left half of tube
+    temp_fac = temp_fac[0:i_half]
+    f_jj = np.where(temp_fac > temp_fac[0])
+    f_jj=f_jj[0]
+
+    if (len(f_jj) == 0): f_jj = nei_jj
+
     # interpolation arrays
     # define subregion
-    i_min,i_max = 285,999 # left half of tube (start = 3.9s)
-    #i_min,i_max = 1294,1715 # right half of tube
+    i_min,i_max = f_jj[0]-30,f_jj[-1]+30 # left half of tube where nei is significant
 
     t_s = t[i_min:i_max]
     n_s = len(t_s)
@@ -73,15 +86,15 @@ def create_arr(tube,frac,log10T,log10G,time=55,verbose=False):
     i_s = np.arange(0,n_s)
     ii = np.arange(0,10*(n_s-1))*0.1
 
-    int_x = interp1d(i_s,los_x_s,kind='linear')#,fill_value="extrapolate")
-    int_v = interp1d(i_s,sm_v_s,kind='linear')
-    int_t = interp1d(i_s,t_s,kind='linear')
-    int_ne = interp1d(i_s,n_e_s,kind='linear')
-    int_b = interp1d(i_s,b_s,kind='linear')
-    int_dl_e = interp1d(i_s,dl_e_s,kind='linear')
-    int_G = interp1d(i_s,G_s,kind='linear')
-    int_fnei = interp1d(i_s,f_nei_s,kind='linear')
-    int_feqi = interp1d(i_s,f_eqi_s,kind='linear')
+    int_x = interp1d(i_s,los_x_s,kind=interp)#,fill_value="extrapolate")
+    int_v = interp1d(i_s,sm_v_s,kind=interp)
+    int_t = interp1d(i_s,t_s,kind=interp)
+    int_ne = interp1d(i_s,n_e_s,kind=interp)
+    int_b = interp1d(i_s,b_s,kind=interp)
+    int_dl_e = interp1d(i_s,dl_e_s,kind=interp)
+    int_G = interp1d(i_s,G_s,kind=interp)
+    int_fnei = interp1d(i_s,f_nei_s,kind=interp)
+    int_feqi = interp1d(i_s,f_eqi_s,kind=interp)
 
     # new, interpolated arrays from tarr/tube
     x = int_x(ii)
@@ -168,7 +181,7 @@ def create_arr(tube,frac,log10T,log10G,time=55,verbose=False):
         print('atn = ', atn)
         print('photo erg = ', photo_erg)
 
-    d = {'wav':ll,'spec':tot_emissNEI,'EM':EM,'g':g,'fac':photo_fac*factor,'x':x,'v':v,'T':T,'ne':ne}
+    d = {'wav':ll,'spec':tot_emissNEI,'EM':EM,'g':g,'fac':photo_fac*factor,'x':x,'v':v,'T':T,'ne':ne,'raw_x':los_x,'raw_v':sm_v}
 
 
     # d['wav'] = ll
