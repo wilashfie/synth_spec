@@ -107,12 +107,13 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
     a0_2 = est_params([ m0, m1, m2, m3 ], dx=dx)
     if verbose==True: print('est params = ', a0_2)
 
+    # new routine to find peaks for initial parameters ----------------------------------------------
     spec_sm = savgol_filter(y, 23, 1) #smooth to make local peak finding more accurate
     peaks, _ = find_peaks(spec_sm)
 
     pos_peaks = lam[peaks]
     spec_peaks = spec_sm[peaks]
-    iis = np.where(spec_peaks>1)
+    iis = np.where(spec_peaks> 0.05*np.max(spec_sm))
     iis = iis[0]
 
     if (len(iis)>2) and (verbose == True): print('!!!! - more than two peaks found') # as a precaution
@@ -125,11 +126,19 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
         spec_peaks = spec_sm[peaks]
         iis = np.where(spec_peaks>1)
         iis = iis[0]
-        iis = np.append(iis,iis[0]+25) # add one more index for fitting purposes.
+        if verbose == True: print('iis len = ',len(iis))
+        if len(iis)==1: # then two peaks not found via find_peaks(). create artificial peak for fit process.
+            spec_val = 0.5*np.max(spec_sm)
+            spec_peaks = np.append(spec_peaks,spec_val)
+            spec_pos = pos_peaks[iis]-0.25
+            pos_peaks = np.append(pos_peaks,spec_pos)
+            iis = np.append(iis,iis[-1]+1) # add one more index for fitting purposes (need two).
 
     amp_peaks = spec_peaks[iis] # amplitude and position of peaks
     pos_peaks = pos_peaks[iis]
+    # update exsisting estimation for fit parameters
     a0_2[0],a0_2[1],a0_2[3],a0_2[4] = amp_peaks[0],pos_peaks[0],amp_peaks[1],pos_peaks[1]
+    # -------------------------------------------------
 
     if verbose==True: print('new init params = ', a0_2)
     upper_bound = [np.inf,1404,np.inf,np.inf,1404,np.inf]
