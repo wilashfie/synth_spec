@@ -67,7 +67,9 @@ def create_arr(tube,frac,log10T,log10G,time=55,verbose=False, interp = 'linear')
 
     # interpolation arrays
     # define subregion
-    i_min,i_max = f_jj[0]-30,f_jj[-1]+30 # left half of tube where nei is significant
+    #i_min,i_max = f_jj[0]-30,f_jj[-1]+30 # left half of tube where nei is significant
+
+    i_min,i_max = 350,1850 # fixed interval for averaging in time (for n=400)
 
     t_s = t[i_min:i_max]
     n_s = len(t_s)
