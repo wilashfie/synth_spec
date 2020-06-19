@@ -126,8 +126,8 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
         spec_peaks = spec_sm[peaks]
         iis = np.where(spec_peaks>1)
         iis = iis[0]
-        if verbose == True: print('iis len = ',len(iis))
         if len(iis)==1: # then two peaks not found via find_peaks(). create artificial peak for fit process.
+            if verbose == True: print('only one peak still')
             spec_val = 0.5*np.max(spec_sm)
             spec_peaks = np.append(spec_peaks,spec_val)
             spec_pos = pos_peaks[iis]-0.25
@@ -172,7 +172,9 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
     # if double fitting WORSE than single gaussian fit, OR OR OR if the amplitude of the second Gaussian is neglible
     #if( chi2g > chi1g ) or (a2g[0] < a1g[0]*0.01):
     small_amp = np.minimum(a2g[0],a2g[3])
-    if(small_amp < a1g[0]*0.01):
+    lrg_amp = np.maximum(a2g[0],a2g[3])
+    lrg_vel = np.maximum(np.abs(a2g[1]),np.abs(a2g[4]))
+    if(small_amp < lrg_amp*0.01): #or (lrg_vel>300):
         a2g = np.concatenate((a1g, a1g)) #  return copies of single fit params
         a2g[3] = 0.0 #  but zero amplitude
         y2a = y1g
