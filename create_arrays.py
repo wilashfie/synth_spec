@@ -69,7 +69,8 @@ def create_arr(tube,frac,log10T,log10G,time=55,verbose=False, interp = 'linear')
     # define subregion
     #i_min,i_max = f_jj[0]-30,f_jj[-1]+30 # left half of tube where nei is significant
 
-    i_min,i_max = 350,1850 # fixed interval for averaging in time (for n=400)
+    #i_min,i_max = 350,1850 # fixed interval for averaging in time (for n=400)
+    i_min,i_max = 250,999 # fixed interval for averaging in time (for n=400)
 
     t_s = t[i_min:i_max]
     n_s = len(t_s)
@@ -174,6 +175,13 @@ def create_arr(tube,frac,log10T,log10G,time=55,verbose=False, interp = 'linear')
     np.nan_to_num(error, copy=False, nan=0)
     tot_emissNEI += error
 
+    meas_error = np.sqrt(tot_emissNEI) # error measured
+    np.nan_to_num(meas_error, copy=False, nan=0)
+
+    rando = np.random.randn(2000)*0.001*np.max(meas_error) # add small amount of noise to zero-ish values
+    too_small = np.where(meas_error < 0.01*np.max(meas_error))
+    meas_error[too_small] += rando[too_small]
+
     if verbose == True:
         print('A = ', A)
         print('A_pixel = ', A_pixel)
@@ -183,7 +191,7 @@ def create_arr(tube,frac,log10T,log10G,time=55,verbose=False, interp = 'linear')
         print('atn = ', atn)
         print('photo erg = ', photo_erg)
 
-    d = {'wav':ll,'spec':tot_emissNEI,'EM':EM,'g':g,'fac':photo_fac*factor,'x':x,'v':v,'T':T,'ne':ne,'raw_x':los_x,'raw_v':sm_v}
+    d = {'wav':ll,'spec':tot_emissNEI,'error':meas_error,'EM':EM,'g':g,'fac':photo_fac*factor,'x':x,'v':v,'T':T,'ne':ne,'raw_x':los_x,'raw_v':sm_v}
 
 
     # d['wav'] = ll
