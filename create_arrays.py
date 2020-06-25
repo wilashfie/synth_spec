@@ -17,7 +17,7 @@ from matplotlib import gridspec
 # log10T/log10G, log of contribution function G and corresponding log of temperature T, imported from dana's email
 
 # set inital values
-line = 1402.77
+line = 1403.
 mass = 28.0*1.66054e-27
 kb = 1.3807e-23
 c = 300
@@ -26,13 +26,13 @@ flux=1.0e3 #? why this val?
 ll = np.arange(line-10,line+10,0.01)
 
 
-def create_arr(tube,frac,log10T,log10G,time=55,verbose=False):
+def create_arr(tube,frac,log10T,log10G,time=55,verbose=False, interp = 'linear'):
 
     # define arrays from tube.tarr
     t = tube.tarr.t[time]
     n = tube.tarr.n[time]
     los_v = tube.tarr.v[time].T[0]
-    sm_v = -savgol_filter(los_v,3,1)
+    sm_v = -los_v
     los_x = tube.tarr.x[time].T[0]
     n_e = tube.tarr.epamu[time]*tube.tarr.rho[time]/1.67e-8 # number density
     b = tube.tarr.b[time]
@@ -46,15 +46,31 @@ def create_arr(tube,frac,log10T,log10G,time=55,verbose=False):
     G[temp<22000] = -10000 # set all log10G with low temp to large, small number (st 10^G~0)
 
     # nei/eqi arrays at time =time
-    f_nei=frac.fraq.f_nei[0]
+    f_nei=frac.arrs.f_nei[0]
     f_nei = f_nei[:,time]
-    f_eqi=frac.fraq.f_eqi[0]
+    f_eqi=frac.arrs.f_eqi[0]
     f_eqi = f_eqi[:,time]
+
+    temp_fac = f_nei/f_eqi
+    np.nan_to_num(temp_fac, copy=False, nan=1); # replace inf values with 1 (due to zeros in eqi)
+    i_half = int(n/2) #[0:i_half] = left half of tube
+    test = f_nei[0:i_half]
+    nei_jj = np.where(test > test[0])
+    nei_jj=nei_jj[0]
+
+    i_half = int(n/2) #[0:i_half] = left half of tube
+    temp_fac = temp_fac[0:i_half]
+    f_jj = np.where(temp_fac > temp_fac[0])
+    f_jj=f_jj[0]
+
+    if (len(f_jj) == 0): f_jj = nei_jj
 
     # interpolation arrays
     # define subregion
-    i_min,i_max = 285,999 # left half of tube (start = 3.9s)
-    #i_min,i_max = 1294,1715 # right half of tube
+    #i_min,i_max = f_jj[0]-30,f_jj[-1]+30 # left half of tube where nei is significant
+
+    #i_min,i_max = 350,1850 # fixed interval for averaging in time (for n=400)
+    i_min,i_max = 250,999 # fixed interval for averaging in time (for n=400)
 
     t_s = t[i_min:i_max]
     n_s = len(t_s)
@@ -73,15 +89,15 @@ def create_arr(tube,frac,log10T,log10G,time=55,verbose=False):
     i_s = np.arange(0,n_s)
     ii = np.arange(0,10*(n_s-1))*0.1
 
-    int_x = interp1d(i_s,los_x_s,kind='linear')#,fill_value="extrapolate")
-    int_v = interp1d(i_s,sm_v_s,kind='linear')
-    int_t = interp1d(i_s,t_s,kind='linear')
-    int_ne = interp1d(i_s,n_e_s,kind='linear')
-    int_b = interp1d(i_s,b_s,kind='linear')
-    int_dl_e = interp1d(i_s,dl_e_s,kind='linear')
-    int_G = interp1d(i_s,G_s,kind='linear')
-    int_fnei = interp1d(i_s,f_nei_s,kind='linear')
-    int_feqi = interp1d(i_s,f_eqi_s,kind='linear')
+    int_x = interp1d(i_s,los_x_s,kind=interp)#,fill_value="extrapolate")
+    int_v = interp1d(i_s,sm_v_s,kind=interp)
+    int_t = interp1d(i_s,t_s,kind=interp)
+    int_ne = interp1d(i_s,n_e_s,kind=interp)
+    int_b = interp1d(i_s,b_s,kind=interp)
+    int_dl_e = interp1d(i_s,dl_e_s,kind=interp)
+    int_G = interp1d(i_s,G_s,kind=interp)
+    int_fnei = interp1d(i_s,f_nei_s,kind=interp)
+    int_feqi = interp1d(i_s,f_eqi_s,kind=interp)
 
     # new, interpolated arrays from tarr/tube
     x = int_x(ii)
@@ -159,6 +175,13 @@ def create_arr(tube,frac,log10T,log10G,time=55,verbose=False):
     np.nan_to_num(error, copy=False, nan=0)
     tot_emissNEI += error
 
+    meas_error = np.sqrt(tot_emissNEI) # error measured
+    np.nan_to_num(meas_error, copy=False, nan=0)
+
+    rando = np.random.randn(2000)*0.001*np.max(meas_error) # add small amount of noise to zero-ish values
+    too_small = np.where(meas_error < 0.01*np.max(meas_error))
+    meas_error[too_small] += rando[too_small]
+
     if verbose == True:
         print('A = ', A)
         print('A_pixel = ', A_pixel)
@@ -168,7 +191,7 @@ def create_arr(tube,frac,log10T,log10G,time=55,verbose=False):
         print('atn = ', atn)
         print('photo erg = ', photo_erg)
 
-    d = {'wav':ll,'spec':tot_emissNEI,'EM':EM,'x':x,'v':v,'T':T,'ne':ne}
+    d = {'wav':ll,'spec':tot_emissNEI,'error':meas_error,'EM':EM,'g':g,'fac':photo_fac*factor,'x':x,'v':v,'T':T,'ne':ne,'raw_x':los_x,'raw_v':sm_v}
 
 
     # d['wav'] = ll
@@ -180,15 +203,3 @@ def create_arr(tube,frac,log10T,log10G,time=55,verbose=False):
     # d['ne'] = ne
 
     return d
-
-
-# plot
-#fig=plt.figure(figsize=[10,10])
-#fig, ax = plt.subplots(figsize=[10,10])
-#plt.plot(ll,tot_emissNEI)
-#plt.plot(ll,tot_emiss)
-#plt.xlim(1403,1404)
-#plt.ylabel('normalized intensity')
-#ax.set_xlabel('wavelength [$\AA$]')
-
-#fig.savefig('specI.png',bbox_inches='tight', dpi=600)

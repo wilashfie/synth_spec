@@ -32,7 +32,7 @@ def create_spec(tube,frac,log10T,log10G,time=55,verbose=False):
     t = tube.tarr.t[time]
     n = tube.tarr.n[time]
     los_v = tube.tarr.v[time].T[0]
-    sm_v = -savgol_filter(los_v,3,1)
+    sm_v = -los_v
     los_x = tube.tarr.x[time].T[0]
     n_e = tube.tarr.epamu[time]*tube.tarr.rho[time]/1.67e-8 # number density
     b = tube.tarr.b[time]
@@ -46,15 +46,15 @@ def create_spec(tube,frac,log10T,log10G,time=55,verbose=False):
     G[temp<22000] = -10000 # set all log10G with low temp to large, small number (st 10^G~0)
 
     # nei/eqi arrays at time =time
-    f_nei=frac.fraq.f_nei[0]
+    f_nei=frac.arrs.f_nei[0]
     f_nei = f_nei[:,time]
-    f_eqi=frac.fraq.f_eqi[0]
+    f_eqi=frac.arrs.f_eqi[0]
     f_eqi = f_eqi[:,time]
 
     # interpolation arrays
     # define subregion
     i_min,i_max = 285,999 # left half of tube (start = 3.9s) # 720->999
-    #i_min,i_max = 1294,1715 # right half of tube
+    #i_min,i_max = 350,1850 # for n=400
 
     t_s = t[i_min:i_max]
     n_s = len(t_s)
@@ -143,14 +143,10 @@ def create_spec(tube,frac,log10T,log10G,time=55,verbose=False):
     for i in range(nn):
         emissNEI[i,:] = photo_fac*EM[i]*factor[i]*10**g[i]/np.sqrt(2*np.pi)/sig[i]*np.exp(-(ll-line-line*v[i]/c)**2/(2*sig[i]**2))
         emiss[i,:] = photo_fac*EM[i]*10**g[i]/np.sqrt(2*np.pi*sig[i])*np.exp(-(ll-line-line*v[i]/c)**2/(2*sig[i]**2))
-        #emiss[i,:] = EM[i]*10**g[i]/np.sqrt(2*np.pi*sig[i])*np.exp(-(ll-line-line*v[i]/c)**2/(2*sig[i]**2))
-        #emiss2[i,:] = EM[i]*10**g[i]*line/(c*1e6)*np.exp(-(ll-line-line*v[i]/c)**2/(2*sig[i]**2))
 
     # integrate along loop
     tot_emissNEI = np.sum(emissNEI,axis=0)
-    #tot_emissNEI /= max(tot_emissNEI) #normalize
     tot_emiss = np.sum(emiss,axis=0)
-    #tot_emiss /= max(tot_emiss) #normalize
 
     #generate and add noise
     yerr = np.sqrt(tot_emissNEI)
@@ -158,6 +154,13 @@ def create_spec(tube,frac,log10T,log10G,time=55,verbose=False):
     error = yerr*noise
     np.nan_to_num(error, copy=False, nan=0)
     tot_emissNEI += error
+
+    meas_error = np.sqrt(tot_emissNEI) # error measured
+    np.nan_to_num(meas_error, copy=False, nan=0)
+
+    rando = np.random.randn(2000)*0.001*np.max(meas_error) # add small amount of noise to zero-ish values
+    too_small = np.where(meas_error < 0.01*np.max(meas_error))
+    meas_error[too_small] += rando[too_small]
 
     if verbose == True:
         print('A = ', A)
@@ -169,16 +172,4 @@ def create_spec(tube,frac,log10T,log10G,time=55,verbose=False):
         print('photo erg = ', photo_erg)
 
 
-    return ll,tot_emissNEI,error
-
-
-# plot
-#fig=plt.figure(figsize=[10,10])
-#fig, ax = plt.subplots(figsize=[10,10])
-#plt.plot(ll,tot_emissNEI)
-#plt.plot(ll,tot_emiss)
-#plt.xlim(1403,1404)
-#plt.ylabel('normalized intensity')
-#ax.set_xlabel('wavelength [$\AA$]')
-
-#fig.savefig('specI.png',bbox_inches='tight', dpi=600)
+    return ll,tot_emissNEI,meas_error
