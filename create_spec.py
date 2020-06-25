@@ -53,8 +53,8 @@ def create_spec(tube,frac,log10T,log10G,time=55,verbose=False):
 
     # interpolation arrays
     # define subregion
-    #i_min,i_max = 285,999 # left half of tube (start = 3.9s) # 720->999
-    i_min,i_max = 350,1850 # for n=400
+    i_min,i_max = 285,999 # left half of tube (start = 3.9s) # 720->999
+    #i_min,i_max = 350,1850 # for n=400
 
     t_s = t[i_min:i_max]
     n_s = len(t_s)
