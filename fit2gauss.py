@@ -124,8 +124,9 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
         peaks, _ = find_peaks(spec_sm)
         pos_peaks = lam[peaks]
         spec_peaks = spec_sm[peaks]
-        iis = np.where(spec_peaks>1)
+        iis = np.where(spec_peaks>0.05*np.max(spec_sm))
         iis = iis[0]
+        print('iss =', iis)
         if len(iis)==1: # then two peaks not found via find_peaks(). create artificial peak for fit process.
             if verbose == True: print('only one peak still')
             spec_val = 0.5*np.max(spec_sm)
@@ -146,7 +147,8 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
     #a2g, a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2, sigma = yerr, absolute_sigma = True, maxfev = 110000)#, bounds=(lower_bound, upper_bound)) #,
     #a2g,a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2, maxfev = 2000, bounds = (0, np.inf)) # no sig
     #a2g,a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2, bounds = (0, np.inf)) # no sig
-    a2g,a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2)
+    #a2g,a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2)
+    a2g,a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2, maxfev = 5500)
 
     # individual gaussians of double fit
     pars_1 = a2g[0:3]
