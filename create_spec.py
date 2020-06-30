@@ -43,7 +43,11 @@ def create_spec(tube,frac,log10T,log10G,time=55,verbose=False):
     inter = interp1d(te,log10G,kind='cubic', bounds_error=False, fill_value=-10e6) #fill outide vals with large, small number
     temp = 1e6*tube.tarr.t[time]
     G = inter(temp)
-    G[temp<22000] = -10000 # set all log10G with low temp to large, small number (st 10^G~0)
+
+    # set all log10G with low temp to large, small number (st 10^G~0)
+    t_0 = tube.tarr.t[0]
+    temp_0 = 1e6*np.round(t_0[0],4)
+    G[temp<temp_0] = -10000
 
     # nei/eqi arrays at time =time
     f_nei=frac.arrs.f_nei[0]
