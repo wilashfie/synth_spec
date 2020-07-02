@@ -74,7 +74,7 @@ def create_arr(tube,frac,log10T,log10G,time=55,verbose=False, interp = 'linear')
     #i_min,i_max = f_jj[0]-30,f_jj[-1]+30 # left half of tube where nei is significant
 
     #i_min,i_max = 350,1850 # fixed interval for averaging in time (for n=400)
-    i_min,i_max = 250,999 # fixed interval for averaging in time (for n=200)
+    i_min,i_max = 250,i_half-2 # fixed interval for averaging in time (for n=200)
 
     t_s = t[i_min:i_max]
     n_s = len(t_s)
@@ -162,7 +162,7 @@ def create_arr(tube,frac,log10T,log10G,time=55,verbose=False, interp = 'linear')
     emiss = emissNEI
     for i in range(nn):
         emissNEI[i,:] = photo_fac*EM[i]*factor[i]*10**g[i]/np.sqrt(2*np.pi)/sig[i]*np.exp(-(ll-line-line*v[i]/c)**2/(2*sig[i]**2))
-        emiss[i,:] = photo_fac*EM[i]*10**g[i]/np.sqrt(2*np.pi*sig[i])*np.exp(-(ll-line-line*v[i]/c)**2/(2*sig[i]**2))
+        emiss[i,:] = photo_fac*EM[i]*10**g[i]/np.sqrt(2*np.pi)/sig[i]*np.exp(-(ll-line-line*v[i]/c)**2/(2*sig[i]**2))
         #emiss[i,:] = EM[i]*10**g[i]/np.sqrt(2*np.pi*sig[i])*np.exp(-(ll-line-line*v[i]/c)**2/(2*sig[i]**2))
         #emiss2[i,:] = EM[i]*10**g[i]*line/(c*1e6)*np.exp(-(ll-line-line*v[i]/c)**2/(2*sig[i]**2))
 

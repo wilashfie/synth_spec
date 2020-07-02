@@ -126,7 +126,7 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
         spec_peaks = spec_sm[peaks]
         iis = np.where(spec_peaks>0.05*np.max(spec_sm))
         iis = iis[0]
-        print('iss =', iis)
+        #print('iss =', iis)
         if len(iis)==1: # then two peaks not found via find_peaks(). create artificial peak for fit process.
             if verbose == True: print('only one peak still')
             spec_val = 0.5*np.max(spec_sm)
