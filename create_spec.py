@@ -17,7 +17,7 @@ from matplotlib import gridspec
 # log10T/log10G, log of contribution function G and corresponding log of temperature T, imported from dana's email
 
 # set inital values
-line = 1403.
+line = 1402.77
 mass = 28.0*1.66054e-27
 kb = 1.3807e-23
 c = 300
