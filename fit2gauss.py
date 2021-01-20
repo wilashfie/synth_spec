@@ -71,10 +71,21 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
     if( m0 < min_tot ):
         chi1g = -1.0
         a1g = [0,0,0]
+        a2g = [0,0,0,0,0,0]
         d['moms'] = moms
         d['chi1g'] = chi1g
-        d['a2g'] = [0,0,0,0,0,0]
-        if verbose==True: print('ejecting!')
+        d['a2g'] = a2g
+        d['a1g'] = a1g
+
+        y1g = single_gauss_func_noder(lam, *a1g)
+        pars_1 = a2g[0:3]
+        pars_2 = a2g[3:6]
+        y2a = single_gauss_func_noder(lam, *pars_1)
+        y2b = single_gauss_func_noder(lam, *pars_2)
+        d['y1g'] = y1g
+        d['y2a'] = y2a
+        d['y2b'] = y2b
+        if verbose==True: print('Nothing to fit.. ejecting!')
         return d
 
     # ===== do 1-Gaussian fit
@@ -83,21 +94,13 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
     dx = lam[1]-lam[0]
     a0 = [dx*m0/(np.sqrt(2*np.pi)*sd), m1, sd] #  estimate of 1-gaussian paramters
 
-    #y1g = gaussfit( lam, y, a1g, chisq=chi1g, nterm=3, meas=yerr, est=a0 )
+    # perform fit
     a1g,a1cov = curve_fit(single_gauss_func_noder, lam, y, p0=a0)#, bounds=(0, np.inf))
     y1g = single_gauss_func_noder(lam, *a1g)
 
     #calculate chi_square
-    #jj = np.where((lam > 1402) & (lam < 1405)) # trim excess zeros in data first
-    #jj = np.where(y > 0.001)
-    #lam_s = lam[jj]
-    #y_s = y[jj]
     y_modelone = single_gauss_func_noder(lam, *a1g)
-    #y_modelone = y1g[jj]
-    #yerr_s = yerr[jj]
     X2one = np.sum(((y_modelone - y) / yerr)**2)
-
-    #X2_1 = np.sum(((y1g-y)/yerr)**2)
     chi1g = X2one/(len(y)-3) # reduced chi^2
 
 
@@ -108,12 +111,12 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
     if verbose==True: print('est params = ', a0_2)
 
     # new routine to find peaks for initial parameters ----------------------------------------------
-    spec_sm = savgol_filter(y, 23, 1) #smooth to make local peak finding more accurate
-    peaks, _ = find_peaks(spec_sm)
+    #spec_sm = savgol_filter(y, 3, 1) #smooth to make local peak finding more accurate
+    peaks, _ = find_peaks(y)
 
     pos_peaks = lam[peaks]
-    spec_peaks = spec_sm[peaks]
-    iis = np.where(spec_peaks> 0.05*np.max(spec_sm))
+    spec_peaks = y[peaks]
+    iis = np.where(spec_peaks> 0.2*np.max(y))
     iis = iis[0]
 
     if (len(iis)>2) and (verbose == True): print('!!!! - more than two peaks found') # as a precaution
@@ -131,31 +134,32 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
             if verbose == True: print('only one peak still')
             spec_val = 0.5*np.max(spec_sm)
             spec_peaks = np.append(spec_peaks,spec_val)
-            spec_pos = pos_peaks[iis]-0.25
+            spec_pos = pos_peaks[iis]+0.25
             pos_peaks = np.append(pos_peaks,spec_pos)
             iis = np.append(iis,iis[-1]+1) # add one more index for fitting purposes (need two).
 
     amp_peaks = spec_peaks[iis] # amplitude and position of peaks
     pos_peaks = pos_peaks[iis]
     # update exsisting estimation for fit parameters
-    a0_2[0],a0_2[1],a0_2[3],a0_2[4] = amp_peaks[0],pos_peaks[0],amp_peaks[1],pos_peaks[1]
-    # -------------------------------------------------
+    #a0_2[0],a0_2[1],a0_2[3],a0_2[4] = amp_peaks[0],pos_peaks[0],amp_peaks[1],pos_peaks[1]
+    # ------------------------------------------------------------------------------------------
 
     if verbose==True: print('new init params = ', a0_2)
     upper_bound = [np.inf,1404,np.inf,np.inf,1404,np.inf]
-    lower_bound = [0,1403,0,0,0,0]
-    #a2g, a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2, sigma = yerr, absolute_sigma = True, maxfev = 110000)#, bounds=(lower_bound, upper_bound)) #,
+    lower_bound = [500,1402,0,500,0,0]
+    #if a0_2[1]>1404: a0_2[1]=1403.5
+    #if a0_2[4]>1404: a0_2[4]=1403.5
+    a2g, a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2, sigma = yerr, absolute_sigma = True, maxfev = 110000)#, bounds=(lower_bound, upper_bound)) #,
     #a2g,a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2, maxfev = 2000, bounds = (0, np.inf)) # no sig
     #a2g,a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2, bounds = (0, np.inf)) # no sig
     #a2g,a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2)
-    a2g,a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2, maxfev = 5500)
+    #a2g,a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2, maxfev = 6500)
 
     # individual gaussians of double fit
     pars_1 = a2g[0:3]
     pars_2 = a2g[3:6]
     y2a = single_gauss_func_noder(lam, *pars_1)
     y2b = single_gauss_func_noder(lam, *pars_2)
-
 
     # calculate chi^2
     #y_modeltwo = double_gauss_func_noder(lam_s, *a2g)
@@ -172,16 +176,19 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
 
 
     # if double fitting WORSE than single gaussian fit, OR OR OR if the amplitude of the second Gaussian is neglible
-    #if( chi2g > chi1g ) or (a2g[0] < a1g[0]*0.01):
-    small_amp = np.minimum(a2g[0],a2g[3])
-    lrg_amp = np.maximum(a2g[0],a2g[3])
-    lrg_vel = np.maximum(np.abs(a2g[1]),np.abs(a2g[4]))
-    if(small_amp < lrg_amp*0.01): #or (lrg_vel>300):
+    if( chi2g > chi1g ) or (a2g[0] < a1g[0]*0.01):
+        small_amp = np.minimum(a2g[0],a2g[3])
+        lrg_amp = np.maximum(a2g[0],a2g[3])
+
+        lrg_vel = np.maximum(np.abs(a2g[1]),np.abs(a2g[4]))
+
+    if(chi1g<chi_thr): #or (lrg_vel>300):
         a2g = np.concatenate((a1g, a1g)) #  return copies of single fit params
         a2g[3] = 0.0 #  but zero amplitude
         y2a = y1g
         y2b = 0.0*y1g
         chi2g = -1.0 #  flag that no fit was attmepted
+
 
     if verbose==True:
         print('a2g = ', a2g)

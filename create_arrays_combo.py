@@ -17,7 +17,7 @@ from matplotlib import gridspec
 # log10T/log10G, log of contribution function G and corresponding log of temperature T, imported from dana's email
 
 # set inital values
-line = 1403.
+line = 1402.77
 mass = 28.0*1.66054e-27
 kb = 1.3807e-23
 c = 300
@@ -26,22 +26,22 @@ flux=1.0e3 #? why this val?
 ll = np.arange(line-10,line+10,0.01)
 
 
-def create_spec(tube,frac,log10T,log10G,time=55,verbose=False):
+def create_arr(tube,frac,log10T,log10G,i_shift = 5,time=55,verbose=False, interp = 'linear'):
 
-    # define arrays from tube.tarr
-    t = tube.tarr.t[time]
-    n = tube.tarr.n[time]
-    los_v = tube.tarr.v[time].T[0]
+    # define arrays from averages of tube.tarr +tube2.tarr
+    t = (tube.tarr.t[time] + np.roll(tube.tarr.t[time],-i_shift))/2.
+    n = (tube.tarr.n[time] + np.roll(tube.tarr.n[time],-i_shift))/2.
+    los_v = (tube.tarr.v[time].T[0] + np.roll(tube.tarr.v[time].T[0],-i_shift))/2.
     sm_v = -los_v
-    los_x = tube.tarr.x[time].T[0]
-    n_e = tube.tarr.epamu[time]*tube.tarr.rho[time]/1.67e-8 # number density
-    b = tube.tarr.b[time]
-    dl_e = tube.tarr.dl_e[time]
+    los_x = (tube.tarr.x[time].T[0] + np.roll(tube.tarr.x[time].T[0],-i_shift))/2.
+    n_e = ((tube.tarr.epamu[time]*tube.tarr.rho[time]/1.67e-8) + (np.roll(tube.tarr.epamu[time],-i_shift)*np.roll(tube.tarr.rho[time],-i_shift)/1.67e-8))/2. # number density
+    b = (tube.tarr.b[time] + np.roll(tube.tarr.b[time],-i_shift))/2.
+    dl_e = (tube.tarr.dl_e[time] + np.roll(tube.tarr.dl_e[time],-i_shift))/2.
 
     # interpolate our GofT data
     te = 10**log10T
     inter = interp1d(te,log10G,kind='cubic', bounds_error=False, fill_value=-10e6) #fill outide vals with large, small number
-    temp = 1e6*tube.tarr.t[time]
+    temp = 1e6*t
     G = inter(temp)
 
     # set all log10G with low temp to large, small number (st 10^G~0)
@@ -51,15 +51,30 @@ def create_spec(tube,frac,log10T,log10G,time=55,verbose=False):
 
     # nei/eqi arrays at time =time
     f_nei=frac.arrs.f_nei[0]
-    f_nei = f_nei[:,time]
-    f_eqi=frac.arrs.f_eqi[0]
-    f_eqi = f_eqi[:,time]
+    f_nei = ( f_nei[:,time] + np.roll(f_nei[:,time],-i_shift) )/2.
+    f_eqi = frac.arrs.f_eqi[0]
+    f_eqi = ( f_eqi[:,time] + np.roll(f_eqi[:,time],-i_shift) )/2.
+
+    temp_fac = f_nei/f_eqi
+    np.nan_to_num(temp_fac, copy=False, nan=1); # replace inf values with 1 (due to zeros in eqi)
+    i_half = int(n/2) #[0:i_half] = left half of tube
+    test = f_nei[0:i_half]
+    nei_jj = np.where(test > test[0])
+    nei_jj=nei_jj[0]
+
+    i_half = int(n/2) #[0:i_half] = left half of tube
+    temp_fac = temp_fac[0:i_half]
+    f_jj = np.where(temp_fac > temp_fac[0])
+    f_jj=f_jj[0]
+
+    if (len(f_jj) == 0): f_jj = nei_jj
 
     # interpolation arrays
     # define subregion
-    i_half = int(n/2)
-    i_min,i_max = 285,i_half # left half of tube (start = 3.9s) # 720->999
-    #i_min,i_max = 350,1850 # for n=400
+    #i_min,i_max = f_jj[0]-30,f_jj[-1]+30 # left half of tube where nei is significant
+
+    #i_min,i_max = 350,1850 # fixed interval for averaging in time (for n=400)
+    i_min,i_max = 250,i_half-2 # fixed interval for averaging in time (for n=200)
 
     t_s = t[i_min:i_max]
     n_s = len(t_s)
@@ -77,16 +92,17 @@ def create_spec(tube,frac,log10T,log10G,time=55,verbose=False):
     N=10*n_s
     i_s = np.arange(0,n_s)
     ii = np.arange(0,10*(n_s-1))*0.1
+    i_length = len(ii)
 
-    int_x = interp1d(i_s,los_x_s,kind='linear')#,fill_value="extrapolate")
-    int_v = interp1d(i_s,sm_v_s,kind='linear')
-    int_t = interp1d(i_s,t_s,kind='linear')
-    int_ne = interp1d(i_s,n_e_s,kind='linear')
-    int_b = interp1d(i_s,b_s,kind='linear')
-    int_dl_e = interp1d(i_s,dl_e_s,kind='linear')
-    int_G = interp1d(i_s,G_s,kind='linear')
-    int_fnei = interp1d(i_s,f_nei_s,kind='linear')
-    int_feqi = interp1d(i_s,f_eqi_s,kind='linear')
+    int_x = interp1d(i_s,los_x_s,kind=interp)#,fill_value="extrapolate")
+    int_v = interp1d(i_s,sm_v_s,kind=interp)
+    int_t = interp1d(i_s,t_s,kind=interp)
+    int_ne = interp1d(i_s,n_e_s,kind=interp)
+    int_b = interp1d(i_s,b_s,kind=interp)
+    int_dl_e = interp1d(i_s,dl_e_s,kind=interp)
+    int_G = interp1d(i_s,G_s,kind=interp)
+    int_fnei = interp1d(i_s,f_nei_s,kind=interp)
+    int_feqi = interp1d(i_s,f_eqi_s,kind=interp)
 
     # new, interpolated arrays from tarr/tube
     x = int_x(ii)
@@ -147,16 +163,20 @@ def create_spec(tube,frac,log10T,log10G,time=55,verbose=False):
     emiss = emissNEI
     for i in range(nn):
         emissNEI[i,:] = photo_fac*EM[i]*factor[i]*10**g[i]/np.sqrt(2*np.pi)/sig[i]*np.exp(-(ll-line-line*v[i]/c)**2/(2*sig[i]**2))
-        emiss[i,:] = photo_fac*EM[i]*10**g[i]/np.sqrt(2*np.pi*sig[i])*np.exp(-(ll-line-line*v[i]/c)**2/(2*sig[i]**2))
+        emiss[i,:] = photo_fac*EM[i]*10**g[i]/np.sqrt(2*np.pi)/sig[i]*np.exp(-(ll-line-line*v[i]/c)**2/(2*sig[i]**2))
+        #emiss[i,:] = EM[i]*10**g[i]/np.sqrt(2*np.pi*sig[i])*np.exp(-(ll-line-line*v[i]/c)**2/(2*sig[i]**2))
+        #emiss2[i,:] = EM[i]*10**g[i]*line/(c*1e6)*np.exp(-(ll-line-line*v[i]/c)**2/(2*sig[i]**2))
 
     # integrate along loop
     tot_emissNEI = np.sum(emissNEI,axis=0)
+    #tot_emissNEI /= max(tot_emissNEI) #normalize
     tot_emiss = np.sum(emiss,axis=0)
+    #tot_emiss /= max(tot_emiss) #normalize
 
     #generate and add noise
     yerr = np.sqrt(tot_emissNEI)
     noise = np.random.normal(0.0 ,size = len(tot_emissNEI)) # make gaussian noise instead.
-    error = yerr*noise
+    error = yerr*noise*0.1
     np.nan_to_num(error, copy=False, nan=0)
     tot_emissNEI += error
 
@@ -176,5 +196,15 @@ def create_spec(tube,frac,log10T,log10G,time=55,verbose=False):
         print('atn = ', atn)
         print('photo erg = ', photo_erg)
 
+    d = {'wav':ll,'spec':tot_emissNEI,'error':meas_error,'EM':EM,'g':g,'fac':photo_fac*factor,'x':x,'v':v,'T':T,'ne':ne,'raw_x':los_x,'raw_v':sm_v,'i_length':i_length}
 
-    return ll,tot_emissNEI,meas_error
+
+    # d['wav'] = ll
+    # d['spec'] = tot_emissNEI
+    # d['EM'] = np.sum(EM)
+    # d['x'] = x
+    # d['v'] = v
+    # d['T'] = T
+    # d['ne'] = ne
+
+    return d

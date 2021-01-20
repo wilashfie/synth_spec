@@ -17,7 +17,7 @@ from matplotlib import gridspec
 # log10T/log10G, log of contribution function G and corresponding log of temperature T, imported from dana's email
 
 # set inital values
-line = 1403.
+line = 1402.77
 mass = 28.0*1.66054e-27
 kb = 1.3807e-23
 c = 300
@@ -92,6 +92,7 @@ def create_arr(tube,frac,log10T,log10G,time=55,verbose=False, interp = 'linear')
     N=10*n_s
     i_s = np.arange(0,n_s)
     ii = np.arange(0,10*(n_s-1))*0.1
+    i_length = len(ii)
 
     int_x = interp1d(i_s,los_x_s,kind=interp)#,fill_value="extrapolate")
     int_v = interp1d(i_s,sm_v_s,kind=interp)
@@ -195,7 +196,7 @@ def create_arr(tube,frac,log10T,log10G,time=55,verbose=False, interp = 'linear')
         print('atn = ', atn)
         print('photo erg = ', photo_erg)
 
-    d = {'wav':ll,'spec':tot_emissNEI,'error':meas_error,'EM':EM,'g':g,'fac':photo_fac*factor,'x':x,'v':v,'T':T,'ne':ne,'raw_x':los_x,'raw_v':sm_v}
+    d = {'wav':ll,'spec':tot_emissNEI,'error':meas_error,'EM':EM,'g':g,'fac':photo_fac*factor,'x':x,'v':v,'T':T,'ne':ne,'raw_x':los_x,'raw_v':sm_v,'i_length':i_length}
 
 
     # d['wav'] = ll
