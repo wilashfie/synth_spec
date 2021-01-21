@@ -243,11 +243,12 @@ class siiv:
         print('number of time elements after rebin: ',self.reerror.shape[0])
 
         self.time = np.arange(0,self.reerror.shape[0]*int_time,int_time)
-        nt = len(time)-1
 
 
     def fitspec(self):
         nt = len(self.time)
+        print('nt = ',nt)
+
         self.vr = np.zeros(nt)
         self.vb = np.zeros(nt)
         self.wr = np.zeros(nt)
@@ -258,13 +259,18 @@ class siiv:
 
             t_i = self.time[i]
 
-            dat,err = self.respec[i,:],self.error[i,:] # need to run self.master() prior to running this..
+
+            dat = self.respec[i,:]
+            err  = self.reerror[i,:] # need to run self.master() prior to running this..
 
             res = fit2gauss(ll,dat,err,chi_thr=100.)
             a2g = res["a2g"] # extract fit parameters
             a1g = res["a1g"]
-            a2gB = np.min(a2g[1],a2g[4])
-            a2gR = np.max(a2g[1],a2g[4])
+            if a2g[1]!=a2g[4]:
+                a2gB = np.min(a2g[1],a2g[4])
+                a2gR = np.max(a2g[1],a2g[4])
+            else:
+                a2gB,a2gR = a2g[1],a2g[4]
 
             self.amp[i] = a1g[0]
             #calculate Doppler velocitiesand wavelengths
@@ -275,7 +281,7 @@ class siiv:
             self.vr[i] = (a2g[4]-line)/line*3e5
 
 
-    def plotgauss(self,itime):
+    def plotgauss(self,itime=0):
         spec_fit,error_fit = self.respec[itime,:],self.reerror[itime,:]
         res = fit2gauss(ll,spec_fit,error_fit,chi_thr=50.,verbose=False)
         # extract arrays
