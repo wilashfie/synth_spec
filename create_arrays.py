@@ -30,6 +30,12 @@ class siiv:
 
     def __init__(self,tube,frac,log10T,log10G,time=55,verbose=False, interp = 'linear'):
 
+        global TUBE,FRAC,LOG10T,LOG10G
+        TUBE = tube
+        FRAC = frac
+        LOG10T = log10T
+        LOG10G = log10G
+
         # define arrays from tube.tarr
         t = tube.tarr.t[time]
         n = tube.tarr.n[time]
@@ -39,6 +45,8 @@ class siiv:
         n_e = tube.tarr.epamu[time]*tube.tarr.rho[time]/1.67e-8 # number density
         b = tube.tarr.b[time]
         dl_e = tube.tarr.dl_e[time]
+
+        self.t_n = tube.tarr.shape[0] - 1 # len of tube in time (in steps of 0.1s)
 
         # interpolate our GofT data
         te = 10**log10T
@@ -199,3 +207,20 @@ class siiv:
         self.los_x = los_x
         self.los_v = sm_v
         self.i_length = i_length
+
+
+
+    def master(self):
+
+        SPEC = np.zeros((self.t_n,len(self.spec)))
+        ERROR = np.zeros((self.t_n,len(self.error)))
+
+        for i in range(0,self.t_n):
+
+            arrs = siiv(TUBE,FRAC,LOG10T,LOG10G,time=i)
+
+            SPEC[i,:] = arrs.spec
+            ERROR[i,:] = arrs.error
+
+        self.total_spec = SPEC
+        self.total_error = ERROR
