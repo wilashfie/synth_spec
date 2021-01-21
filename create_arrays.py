@@ -7,6 +7,8 @@ from scipy.optimize import curve_fit
 from scipy.signal import savgol_filter
 from matplotlib import gridspec
 
+from fit2gauss import fit2gauss
+
 
 # creates syntetic Si IV - 1402.77 ang. line from PREFT simulation
 
@@ -239,3 +241,72 @@ class siiv:
         self.reerror = np.mean(nu_error,axis=1)
 
         print('number of time elements after rebin: ',self.reerror.shape[0])
+
+        self.time = np.arange(0,self.reerror.shape[0]*int_time,int_time)
+        nt = len(time)-1
+
+
+    def fitspec(self):
+        nt = len(self.time)
+        self.vr = np.zeros(nt)
+        self.vb = np.zeros(nt)
+        self.wr = np.zeros(nt)
+        self.wb = np.zeros(nt)
+        self.amp = np.zeros(nt)
+
+        for i in range(0,nt):
+
+            t_i = self.time[i]
+
+            dat,err = self.respec[i,:],self.error[i,:] # need to run self.master() prior to running this..
+
+            res = fit2gauss(ll,dat,err,chi_thr=100.)
+            a2g = res["a2g"] # extract fit parameters
+            a1g = res["a1g"]
+            a2gB = np.min(a2g[1],a2g[4])
+            a2gR = np.max(a2g[1],a2g[4])
+
+            self.amp[i] = a1g[0]
+            #calculate Doppler velocitiesand wavelengths
+            line = 1402.77
+            c = 300.
+            freq = c/line*1e3
+            self.vb[i] = (a2g[1]-line)/line*3e5 # in km/s
+            self.vr[i] = (a2g[4]-line)/line*3e5
+
+
+    def plotgauss(self,itime):
+        spec_fit,error_fit = self.respec[itime,:],self.reerror[itime,:]
+        res = fit2gauss(ll,spec_fit,error_fit,chi_thr=50.,verbose=False)
+        # extract arrays
+        y2a = res["y2a"]
+        y2b = res["y2b"]
+        y1g = res["y1g"]
+
+        #plot
+        fig = plt.figure(figsize=(14,8))
+        gs = gridspec.GridSpec(1,1)
+        ax1 = fig.add_subplot(gs[0])
+
+        # spectra
+        ax1.plot(ll, spec_fit)
+
+        # peak 1
+        ax1.plot(ll, y2a, "g")
+        ax1.fill_between(ll, y2a.min(), y2a, facecolor="green", alpha=0.5)
+
+        # peak 2
+        ax1.plot(ll, y2b, "y")
+        ax1.fill_between(ll, y2b.min(), y2b, facecolor="yellow", alpha=0.5)
+
+        #both
+        ax1.plot(ll,y2a+y2b, "r")
+
+        # single fit
+        ax1.plot(ll,y1g,'b--')
+
+        plt.xlim(1402.5,1404)
+        #plt.ylim(0,3000)
+        ax1.set_xlabel("wavlength [$\AA$]",  fontsize=12)
+        ax1.set_ylabel("normalized intensity",  fontsize=12)
+        fig.tight_layout()
