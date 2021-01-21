@@ -224,3 +224,18 @@ class siiv:
 
         self.total_spec = SPEC
         self.total_error = ERROR
+
+
+    def rebin(self,dt=0.2,int_time=5.):
+        reshape = int(int_time/dt)
+        print('reshape index = ',reshape)
+
+        self.master()
+
+        nu_spec = self.total_spec.reshape(-1,reshape,2000)
+        nu_error = self.total_error.reshape(-1,reshape,2000)
+
+        self.respec = np.mean(nu_spec,axis=1)
+        self.reerror = np.mean(nu_error,axis=1)
+
+        print('number of time elements after rebin: ',self.reerror.shape[0])
