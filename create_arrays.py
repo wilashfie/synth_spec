@@ -150,7 +150,7 @@ class siiv:
         A_iris = 2.2e-4 # effective area FUV
         au = 1.49e11
         atn = A_iris/au**2
-        exp_time = 4 # unclear if this is correct. Need to double check with data. also, IRIS paper: https://www.lmsal.com/iris_science/doc?cmd=dcur&proj_num=IS0196&file_type=pdf
+        exp_time = 4.0 # double checked, this is more or less right (3.999, or whatever.)
         photo_fac = pixel_size*atn*exp_time/photo_erg # converts EM*g/sig (erg/s/sr/˚A) -> photon count
 
 
