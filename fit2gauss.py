@@ -202,6 +202,7 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
     d['a2g'] = a2g
     d['y2a'] = y2a
     d['y2b'] = y2b
+    d['chi1g'] = chi1g
     d['chi2g'] = chi2g
 
     return d
