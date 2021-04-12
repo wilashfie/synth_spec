@@ -228,7 +228,7 @@ class siiv:
         self.total_error = ERROR
 
 
-    def rebin(self,dt=0.2,int_time=5.):
+    def rebin(self,dt=0.2,int_time=4.):
         reshape = int(int_time/dt)
         print('reshape index = ',reshape)
 
