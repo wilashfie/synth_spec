@@ -49,7 +49,7 @@ def est_params(mvec, sig=0.1, dx=1.):
 
 
 
-def fit2gauss(lam, y, yerr, min_tot=20.0, chi_thr=10.0, base=0.0, verbose=False):
+def fit2gauss(lam, y, yerr, min_tot=100.0, chi_thr=10.0, base=0.0, verbose=False):
 
     # min_tot= minimum intensity to try
     # chi_thr= Chi^2 threshold
@@ -60,24 +60,29 @@ def fit2gauss(lam, y, yerr, min_tot=20.0, chi_thr=10.0, base=0.0, verbose=False)
     d = dict()
 
     yt = ( y - base ) #> 0.0 #    a truncated version for moments
-    yt = np.maximum(yt,0.0)
+    #yt = np.maximum(yt,0.0)
+    yt[yt<0.0]=0.0
     m0 = np.sum( yt ) #> 1.0 #    prevent problems with division
     m0 = np.maximum(m0,1.0)
+    #yt[yt<0.0]=0.0
     m1 = np.sum( yt*lam )/m0
     m2 = np.sum( yt*(lam-m1)**2 )/m0
     m3 = np.sum( yt*(lam-m1)**3 )/m0
+    #print('moms = ',m0, m1, m2)
 
     moms = [ m0, m1, m2 ] #  pack for return
 
     # if first moment is too small (nothing to fit)
     if( m0 < min_tot ):
+        #print('m0 = ',m0)
         chi1g = -1.0
-        a1g = [0,0,1]
-        a2g = [0,0,1,0,0,1]
+        a1g = [1.0,1402.77,1.0]
+        a2g = [1.0,1402.77,1.0,1.0,1402.77,1.0]
         d['moms'] = moms
         d['chi1g'] = chi1g
         d['a2g'] = a2g
         d['a1g'] = a1g
+        #print('a1g[1] = ',a1g[1])
 
         y1g = single_gauss_func_noder(lam, *a1g)
         pars_1 = a2g[0:3]
@@ -95,6 +100,8 @@ def fit2gauss(lam, y, yerr, min_tot=20.0, chi_thr=10.0, base=0.0, verbose=False)
     sd = np.sqrt(m2)
     dx = lam[1]-lam[0]
     a0 = [dx*m0/(np.sqrt(2*np.pi)*sd), m1, sd] #  estimate of 1-gaussian paramters
+    #a0 = [np.max(yt), 1402.77, sd]
+    #print('a0 = ', a0)
 
     # perform fit
     a1g,a1cov = curve_fit(single_gauss_func_noder, lam, y, p0=a0,maxfev = 110000)#, bounds=(0, np.inf))
@@ -182,7 +189,9 @@ def fit2gauss(lam, y, yerr, min_tot=20.0, chi_thr=10.0, base=0.0, verbose=False)
     # if double fitting WORSE than single gaussian fit, OR OR OR if the amplitude of the second Gaussian is neglible
 
     small_amp = np.minimum(a2g[0],a2g[3])
+    print('small_amp= ',small_amp)
     lrg_amp = np.maximum(a2g[0],a2g[3])
+    print('lrg_amp= ',lrg_amp)
     lrg_vel = np.maximum(np.abs(a2g[1]),np.abs(a2g[4]))
 
     #if(chi1g<chi_thr) or (lrg_vel>300) or (small_amp<50):
@@ -199,6 +208,8 @@ def fit2gauss(lam, y, yerr, min_tot=20.0, chi_thr=10.0, base=0.0, verbose=False)
         #print('a2g = ', a2g)
         print('chi1g = ',chi1g)
         print('chi2g = ', chi2g)
+
+    #print('a1g[1] = ',a1g[1])
 
 
     d['moms'] = moms
