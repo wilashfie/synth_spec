@@ -51,9 +51,10 @@ def est_params(mvec, sig=0.1, dx=1.):
 
 def fit2gauss(lam, y, yerr, min_tot=100.0, chi_thr=10.0, base=0.0,fit_indy=False, verbose=False):
 
-    # min_tot= minimum intensity to try
-    # chi_thr= Chi^2 threshold
-    # base= base level subtracted when computing moments
+    # min_tot = minimum intensity to try
+    # chi_thr = Chi^2 threshold
+    # base = base level subtracted when computing moments
+    # fit_indy = option to truncate data array pre/post 0th moment calculation
 
     # ==== compute moments
 
