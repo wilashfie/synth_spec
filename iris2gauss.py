@@ -49,7 +49,7 @@ def est_params(mvec, sig=0.1, dx=1.):
 
 
 
-def fit2gauss(lam, y, yerr, min_tot=100.0, chi_thr=10.0, base=0.0, verbose=False):
+def fit2gauss(lam, y, yerr, min_tot=100.0, chi_thr=10.0, base=0.0,fit_indy=False, verbose=False):
 
     # min_tot= minimum intensity to try
     # chi_thr= Chi^2 threshold
@@ -60,11 +60,17 @@ def fit2gauss(lam, y, yerr, min_tot=100.0, chi_thr=10.0, base=0.0, verbose=False
     d = dict()
 
     yt = ( y - base ) #> 0.0 #    a truncated version for moments
-    #yt = np.maximum(yt,0.0)
-    yt[yt<0.0]=0.0
-    m0 = np.sum( yt ) #> 1.0 #    prevent problems with division
-    m0 = np.maximum(m0,1.0)
-    #yt[yt<0.0]=0.0
+
+    if fit_indy==True:
+        m0 = np.sum( yt ) #> 1.0 #    prevent problems with division
+        m0 = np.maximum(m0,1.0)
+        yt[yt<0.0]=0.0
+    else:
+        yt[yt<0.0]=0.0
+        m0 = np.sum( yt ) #> 1.0 #    prevent problems with division
+        m0 = np.maximum(m0,1.0)
+
+
     m1 = np.sum( yt*lam )/m0
     m2 = np.sum( yt*(lam-m1)**2 )/m0
     m3 = np.sum( yt*(lam-m1)**3 )/m0
@@ -92,7 +98,7 @@ def fit2gauss(lam, y, yerr, min_tot=100.0, chi_thr=10.0, base=0.0, verbose=False
         d['y1g'] = y1g
         d['y2a'] = y2a
         d['y2b'] = y2b
-        print('Nothing to fit.. ejecting!')
+        #print('Nothing to fit.. ejecting!')
         return d
 
     # ===== do 1-Gaussian fit
@@ -189,9 +195,9 @@ def fit2gauss(lam, y, yerr, min_tot=100.0, chi_thr=10.0, base=0.0, verbose=False
     # if double fitting WORSE than single gaussian fit, OR OR OR if the amplitude of the second Gaussian is neglible
 
     small_amp = np.minimum(a2g[0],a2g[3])
-    print('small_amp= ',small_amp)
+    #print('small_amp= ',small_amp)
     lrg_amp = np.maximum(a2g[0],a2g[3])
-    print('lrg_amp= ',lrg_amp)
+    #print('lrg_amp= ',lrg_amp)
     lrg_vel = np.maximum(np.abs(a2g[1]),np.abs(a2g[4]))
 
     #if(chi1g<chi_thr) or (lrg_vel>300) or (small_amp<50):
