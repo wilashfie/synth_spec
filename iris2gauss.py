@@ -29,7 +29,7 @@ def double_gauss_func_noder(x, *a):
 
 
 def est_params(mvec, sig=0.1, dx=1.):
-#  give moments 0 - 3, as elements of mvec, estimate the parameters of 2 gaussians
+    #  give moments 0 - 3, as elements of mvec, estimate the parameters of 2 gaussians
 
 
     s = mvec[3]/mvec[2]**(1.5) # the skewness
@@ -49,18 +49,29 @@ def est_params(mvec, sig=0.1, dx=1.):
 
 
 
-def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
+def fit2gauss(lam, y, yerr, min_tot=100.0, chi_thr=10.0, base=0.0,fit_indy=False, verbose=False):
 
-    # min_tot= minimum intensity to try
-    # chi_thr= Chi^2 threshold
-    # base= base level subtracted when computing moments
+    # min_tot = minimum intensity to try
+    # chi_thr = Chi^2 threshold
+    # base = base level subtracted when computing moments
+    # fit_indy = option to truncate data array pre/post 0th moment calculation
 
     # ==== compute moments
 
     d = dict()
 
     yt = ( y - base ) #> 0.0 #    a truncated version for moments
-    m0 = np.sum( yt ) #> 1.0 #    prevent problems with division
+
+    if fit_indy==True:
+        m0 = np.sum( yt ) #> 1.0 #    prevent problems with division
+        m0 = np.maximum(m0,1.0)
+        yt[yt<0.0]=0.0
+    else:
+        yt[yt<0.0]=0.0
+        m0 = np.sum( yt ) #> 1.0 #    prevent problems with division
+        m0 = np.maximum(m0,1.0)
+
+
     m1 = np.sum( yt*lam )/m0
     m2 = np.sum( yt*(lam-m1)**2 )/m0
     m3 = np.sum( yt*(lam-m1)**3 )/m0
@@ -69,9 +80,10 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
 
     # if first moment is too small (nothing to fit)
     if( m0 < min_tot ):
+        #print('m0 = ',m0)
         chi1g = -1.0
-        a1g = [0,0,0]
-        a2g = [0,0,0,0,0,0]
+        a1g = [1.0,1402.77,1.0]
+        a2g = [1.0,1402.77,1.0,1.0,1402.77,1.0]
         d['moms'] = moms
         d['chi1g'] = chi1g
         d['a2g'] = a2g
@@ -85,7 +97,7 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
         d['y1g'] = y1g
         d['y2a'] = y2a
         d['y2b'] = y2b
-        if verbose==True: print('Nothing to fit.. ejecting!')
+        if verbose == True: print('Nothing to fit.. ejecting!')
         return d
 
     # ===== do 1-Gaussian fit
@@ -95,7 +107,7 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
     a0 = [dx*m0/(np.sqrt(2*np.pi)*sd), m1, sd] #  estimate of 1-gaussian paramters
 
     # perform fit
-    a1g,a1cov = curve_fit(single_gauss_func_noder, lam, y, p0=a0)#, bounds=(0, np.inf))
+    a1g,a1cov = curve_fit(single_gauss_func_noder, lam, y, p0=a0,maxfev = 110000)#, bounds=(0, np.inf))
     y1g = single_gauss_func_noder(lam, *a1g)
 
     #calculate chi_square
@@ -110,7 +122,8 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
     a0_2 = est_params([ m0, m1, m2, m3 ], dx=dx)
     if verbose==True: print('est params = ', a0_2)
 
-    # new routine to find peaks for initial parameters ----------------------------------------------
+    # ==========================================================================
+    # new routine to find peaks for initial parameters (not really ever used) -------------------------------
     #spec_sm = savgol_filter(y, 3, 1) #smooth to make local peak finding more accurate
     peaks, _ = find_peaks(y)
 
@@ -129,7 +142,7 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
         spec_peaks = spec_sm[peaks]
         iis = np.where(spec_peaks>0.05*np.max(spec_sm))
         iis = iis[0]
-        #print('iss =', iis)
+
         if len(iis)==1: # then two peaks not found via find_peaks(). create artificial peak for fit process.
             if verbose == True: print('only one peak still')
             spec_val = 0.5*np.max(spec_sm)
@@ -143,17 +156,12 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
     # update exsisting estimation for fit parameters
     #a0_2[0],a0_2[1],a0_2[3],a0_2[4] = amp_peaks[0],pos_peaks[0],amp_peaks[1],pos_peaks[1]
     # ------------------------------------------------------------------------------------------
+    # ==========================================================================
 
-    if verbose==True: print('new init params = ', a0_2)
+    #if verbose==True: print('new init params = ', a0_2)
     upper_bound = [np.inf,1404,np.inf,np.inf,1404,np.inf]
     lower_bound = [500,1402,0,500,0,0]
-    #if a0_2[1]>1404: a0_2[1]=1403.5
-    #if a0_2[4]>1404: a0_2[4]=1403.5
-    a2g, a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2, sigma = yerr, absolute_sigma = True, maxfev = 110000)#, bounds=(lower_bound, upper_bound)) #,
-    #a2g,a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2, maxfev = 2000, bounds = (0, np.inf)) # no sig
-    #a2g,a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2, bounds = (0, np.inf)) # no sig
-    #a2g,a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2)
-    #a2g,a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2, maxfev = 6500)
+    a2g,a2cov = curve_fit(double_gauss_func_noder, lam, y, p0=a0_2, maxfev = 110000,absolute_sigma = True)
 
     # individual gaussians of double fit
     pars_1 = a2g[0:3]
@@ -174,15 +182,14 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
         print('chi2g = ', chi2g)
 
 
-
+    # method for selecting single aussian over double gaussian
     # if double fitting WORSE than single gaussian fit, OR OR OR if the amplitude of the second Gaussian is neglible
-    if( chi2g > chi1g ) or (a2g[0] < a1g[0]*0.01):
-        small_amp = np.minimum(a2g[0],a2g[3])
-        lrg_amp = np.maximum(a2g[0],a2g[3])
 
-        lrg_vel = np.maximum(np.abs(a2g[1]),np.abs(a2g[4]))
+    small_amp = np.minimum(a2g[0],a2g[3])
+    lrg_amp = np.maximum(a2g[0],a2g[3])
+    lrg_vel = np.maximum(np.abs(a2g[1]),np.abs(a2g[4]))
 
-    if(chi1g<chi_thr): #or (lrg_vel>300):
+    if(chi1g<chi2g) or (small_amp<100) or (lrg_amp<100) or (chi1g<chi_thr) :
         a2g = np.concatenate((a1g, a1g)) #  return copies of single fit params
         a2g[3] = 0.0 #  but zero amplitude
         y2a = y1g
@@ -203,5 +210,6 @@ def fit2gauss(lam, y, yerr, min_tot=0.1, chi_thr=10.0, base=0.0, verbose=False):
     d['y2a'] = y2a
     d['y2b'] = y2b
     d['chi2g'] = chi2g
+    d['chi1g'] = chi1g
 
     return d
