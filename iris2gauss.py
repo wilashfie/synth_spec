@@ -67,7 +67,7 @@ def fit2gauss(lam, y, yerr, min_tot=100.0, chi_thr=10.0, base=0.0,fit_indy=False
         m0 = np.maximum(m0,1.0)
         yt[yt<0.0]=0.0
     else:
-        yt[yt<0.0]=0.0
+        yt[yt<0.0]=0.0 # Dana's does this first. 
         m0 = np.sum( yt ) #> 1.0 #    prevent problems with division
         m0 = np.maximum(m0,1.0)
 
@@ -189,7 +189,9 @@ def fit2gauss(lam, y, yerr, min_tot=100.0, chi_thr=10.0, base=0.0,fit_indy=False
     lrg_amp = np.maximum(a2g[0],a2g[3])
     lrg_vel = np.maximum(np.abs(a2g[1]),np.abs(a2g[4]))
 
-    if(chi1g<chi2g) or (small_amp<100) or (lrg_amp<100) or (chi1g<chi_thr) :
+    #if(chi1g<chi2g) or (small_amp<100) or (lrg_amp<100) or (chi1g<chi_thr) :
+    #if (small_amp<0.1*lrg_amp) or (lrg_amp<0.1*small_amp) or (chi1g<chi_thr) :
+    if (small_amp<100) or (lrg_amp<100) or (chi1g<chi_thr):
         a2g = np.concatenate((a1g, a1g)) #  return copies of single fit params
         a2g[3] = 0.0 #  but zero amplitude
         y2a = y1g
