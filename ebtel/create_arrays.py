@@ -258,6 +258,7 @@ class siiv:
         for i in range(0,nt):
 
             t_i = self.time[i]
+            print('i = ',i)
 
 
             dat = self.respec[i,:]
@@ -266,9 +267,11 @@ class siiv:
             res = fit2gauss(ll,dat,err,chi_thr=100.)
             a2g = res["a2g"] # extract fit parameters
             a1g = res["a1g"]
+            print('a2g1 = ',a2g[1])
+            print('a2g4 = ',a2g[4])
             if a2g[1]!=a2g[4]:
-                a2gB = np.min(a2g[1],a2g[4])
-                a2gR = np.max(a2g[1],a2g[4])
+                a2gB = np.minimum(a2g[1],a2g[4])
+                a2gR = np.maximum(a2g[1],a2g[4])
             else:
                 a2gB,a2gR = a2g[1],a2g[4]
 

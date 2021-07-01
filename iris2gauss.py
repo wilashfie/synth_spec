@@ -67,7 +67,7 @@ def fit2gauss(lam, y, yerr, min_tot=100.0, chi_thr=10.0, base=0.0,fit_indy=False
         m0 = np.maximum(m0,1.0)
         yt[yt<0.0]=0.0
     else:
-        yt[yt<0.0]=0.0 # Dana's does this first. 
+        yt[yt<0.0]=0.0 # Dana's does this first.
         m0 = np.sum( yt ) #> 1.0 #    prevent problems with division
         m0 = np.maximum(m0,1.0)
 
@@ -86,6 +86,7 @@ def fit2gauss(lam, y, yerr, min_tot=100.0, chi_thr=10.0, base=0.0,fit_indy=False
         a2g = [1.0,1402.77,1.0,1.0,1402.77,1.0]
         d['moms'] = moms
         d['chi1g'] = chi1g
+        d['chi2g'] = 100000
         d['a2g'] = a2g
         d['a1g'] = a1g
 
